@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link rel="stylesheet" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Epilogue%3Awght%40400%3B500%3B700%3B900&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" />
+    <title>Login Donacion</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script> <!-- Incluyendo ethers.js (versión UMD) -->
+</head>
+
+<body>
+    <div class="relative flex size-full min-h-screen flex-col bg-[#fcf8f9] group/design-root overflow-x-hidden justify-center items-center" style='font-family: Epilogue, "Noto Sans", sans-serif;'>
+
+        <!-- Imagen Principal -->
+        <div class="flex justify-center items-center w-full">
+            <div class="w-full max-w-[480px] bg-center bg-no-repeat bg-cover flex flex-col justify-end overflow-hidden bg-[#fcf8f9] rounded-xl min-h-80" 
+                style='background-image: url("https://cdn.usegalileo.ai/stability/5f50c268-4f78-421c-bf36-48cb4619364f.png");'>
+            </div>
+        </div>
+        
+        <!-- Título de Bienvenida -->
+        <h1 class="text-[#1b0e10] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 text-center pb-3 pt-5">Bienvenido al Banco de Sangre</h1>
+        
+        <!-- Campo de Clave Pública -->
+        <div class="flex max-w-[480px] flex-wrap items-center justify-center gap-4 px-4 py-3">
+            <label class="flex flex-col min-w-40 flex-1">
+                <input
+                    id="clavePublica"
+                    type="text"
+                    placeholder="Clave pública"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#1b0e10] focus:outline-0 focus:ring-0 border-none bg-[#f3e7e9] focus:border-none h-14 placeholder:text-[#974e58] p-4 text-base font-normal leading-normal"
+                    value=""
+                />
+            </label>
+        </div>
+
+        <!-- Campo de Contraseña con Mostrar/Ocultar -->
+        <div class="flex max-w-[480px] flex-wrap items-center justify-center gap-4 px-4 py-3 relative">
+            <label class="flex flex-col min-w-40 flex-1 relative">
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="Contraseña"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#1b0e10] focus:outline-0 focus:ring-0 border-none bg-[#f3e7e9] focus:border-none h-14 placeholder:text-[#974e58] p-4 text-base font-normal leading-normal"
+                    value=""
+                />
+                <button
+                    type="button"
+                    id="togglePassword"
+                    class="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#974e58] cursor-pointer"
+                >
+                    Mostrar
+                </button>
+            </label>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex justify-center">
+            <div class="flex flex-1 gap-3 max-w-[480px] flex-col items-stretch px-4 py-3">
+                <button
+                    onclick="loginUsuario()"
+                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#e61934] text-[#fcf8f9] text-sm font-bold leading-normal tracking-[0.015em] w-full"
+                >
+                    <span class="truncate">Iniciar sesión</span>
+                </button>
+                <button
+                    onclick="window.location.href='Registro.html'" 
+                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#f3e7e9] text-[#1b0e10] text-sm font-bold leading-normal tracking-[0.015em] w-full"
+                >
+                    <span class="truncate">Crear nueva cuenta</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="h-5 bg-[#fcf8f9]"></div>
+    </div>
+
+    <!-- Modal para Mensajes Emergentes -->
+    <div id="modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+            <h2 id="modal-title" class="text-xl font-bold mb-4 text-[#1b0e10]"></h2>
+            <p id="modal-message" class="text-[#1b0e10] mb-4"></p>
+            <button onclick="closeModal()" class="bg-[#e61934] text-white rounded-lg px-6 py-2">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Script para Mostrar/Ocultar Contraseña y Login -->
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            // Cambiar el tipo de input entre "password" y "text"
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // Cambiar el texto del botón entre "Mostrar" y "Ocultar"
+            this.textContent = type === 'password' ? 'Mostrar' : 'Ocultar';
+        });
+
+        // Configurar la dirección del contrato y la ABI
+        const contractABI = [
+            {
+                "inputs": [
+                    { "internalType": "address", "name": "_clavePublica", "type": "address" },
+                    { "internalType": "string", "name": "_password", "type": "string" }
+                ],
+                "name": "login",
+                "outputs": [
+                    { "internalType": "bool", "name": "", "type": "bool" }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ]; 
+
+        const contractAddress = "0x81fbc574786cf0bc7ae9a561a80976e30ae2b5a1"; // Reemplazar con la dirección del contrato
+
+        let provider;
+        let signer;
+        let contract;
+
+        // Función para conectar a MetaMask y autenticar al usuario
+        async function loginUsuario() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    showModal("Error", "Por favor instala MetaMask para continuar.");
+                    return;
+                }
+
+                // Solicitar conexión a MetaMask
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (accounts.length === 0) {
+                    showModal("Error", "No se encontró ninguna cuenta en MetaMask. Asegúrate de tener una cuenta activa.");
+                    return;
+                }
+
+                // Crear proveedor y firmante a partir de MetaMask
+                provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+                signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                // Obtener valores del formulario
+                const clavePublica = document.getElementById('clavePublica').value;
+                const passwordValue = document.getElementById('password').value;
+
+                // Validación básica de campos
+                if (!clavePublica || !passwordValue) {
+                    showModal("Error", "Por favor, completa todos los campos.");
+                    return;
+                }
+
+                // Verificar si la clave pública es válida
+                if (!ethers.utils.isAddress(clavePublica)) {
+                    showModal("Error", "La clave pública proporcionada no es válida. Por favor verifica e intenta de nuevo.");
+                    return;
+                }
+
+                // Llamar a la función login del contrato
+                const loginExitoso = await contract.login(clavePublica, passwordValue);
+
+                if (loginExitoso) {
+                    // Guardar la clave pública y la dirección del contrato en el localStorage
+                    localStorage.setItem('clavePublica', clavePublica);
+                    localStorage.setItem('direccionContrato', contractAddress);
+
+                    showModal("Éxito", "Inicio de sesión exitoso.");
+                    setTimeout(() => {
+                        window.location.href = "Inicio.html"; // Reemplazar con la ruta de la página de inicio
+                    }, 2000);
+                } else {
+                    showModal("Error", "Credenciales incorrectas. Intenta de nuevo.");
+                }
+
+            } catch (error) {
+                console.error("Error al intentar iniciar sesión:", error);
+                if (error.message.includes("Password incorrecto")) {
+                    showModal("Error", "Password incorrecto. Intenta de nuevo.");
+                } else {
+                    showModal("Error", "Hubo un problema al iniciar sesión. Verifica la consola para más detalles.");
+                }
+            }
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+    </script>
+</body>
+
+</html>

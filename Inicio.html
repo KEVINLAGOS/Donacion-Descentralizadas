@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link rel="stylesheet" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" />
+    <title>Inicio Donacion</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+
+<body>
+    <div class="relative flex size-full min-h-screen flex-col bg-[#fcf8f8] justify-between group/design-root overflow-x-hidden" style='font-family: Manrope, "Noto Sans", sans-serif;'>
+        <div id="content">
+            <div class="flex items-center bg-[#fcf8f8] p-4 pb-2 justify-between">
+                <h2 class="text-[#1b0e0e] text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">BANCO SANGUINEO</h2>
+            </div>
+            <div>
+                <div class="px-4 py-3">
+                    <div class="w-full bg-center bg-no-repeat bg-cover flex flex-col justify-end overflow-hidden bg-[#fcf8f8] rounded-xl min-h-80" style='background-image: url("https://cdn.usegalileo.ai/stability/adfecad3-2520-48bf-9086-5e8e485f2c16.png");'></div>
+                </div>
+            </div>
+            <h2 class="text-[#1b0e0e] tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Salva vidas, dona sangre hoy.</h2>
+            <div class="flex justify-center">
+                <div class="flex flex-1 gap-3 max-w-[480px] flex-col items-stretch px-4 py-3">
+                    <button id="donarButton" class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-[#e61919] text-[#fcf8f8] text-base font-bold leading-normal tracking-[0.015em] w-full" disabled onclick="redirigirATransfusion()">
+                        <span class="truncate">Dona ahora.</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nueva sección para mostrar la información del perfil del usuario -->
+        <div id="perfilUsuario" class="hidden px-4 py-6">
+            <h2 class="text-[#1b0e0e] text-lg font-bold leading-tight tracking-[-0.015em] mb-4 text-center">Perfil del Usuario</h2>
+            <div class="flex flex-col gap-4 max-w-[480px] mx-auto">
+                <label class="flex flex-col">
+                    <span class="text-[#1b0e0e] text-sm font-semibold">Nombre:</span>
+                    <input id="nombre" type="text" readonly class="form-input w-full rounded-xl bg-[#f3e7e9] text-[#1b0e0e] p-3" />
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-[#1b0e0e] text-sm font-semibold">Apellido:</span>
+                    <input id="apellido" type="text" readonly class="form-input w-full rounded-xl bg-[#f3e7e9] text-[#1b0e0e] p-3" />
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-[#1b0e0e] text-sm font-semibold">Dirección:</span>
+                    <input id="direccion" type="text" readonly class="form-input w-full rounded-xl bg-[#f3e7e9] text-[#1b0e0e] p-3" />
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-[#1b0e0e] text-sm font-semibold">Tipo de Usuario:</span>
+                    <input id="tipoUsuario" type="text" readonly class="form-input w-full rounded-xl bg-[#f3e7e9] text-[#1b0e0e] p-3" />
+                </label>
+                <!-- Botón para Cerrar Sesión -->
+                <div class="flex justify-center mt-6">
+                    <button onclick="cerrarSesion()" class="bg-[#e61919] text-white rounded-xl px-6 py-3 font-bold">Cerrar Sesión</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de navegación inferior -->
+        <div class="flex gap-2 border-t border-[#f3e7e7] bg-[#fcf8f8] px-4 pb-3 pt-2">
+            <!-- Icono Inicio -->
+            <a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-[#1b0e0e]" href="#" onclick="mostrarSeccion('inicio')">
+                <div class="text-[#1b0e0e] flex h-8 items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48.11-.11a16,16,0,0,1,21.53,0,1.14,1.14,0,0,0,.11.11l80,75.48A16,16,0,0,1,224,115.55Z"></path>
+                    </svg>
+                </div>
+                <p class="text-[#1b0e0e] text-xs font-medium leading-normal tracking-[0.015em]">Inicio</p>
+            </a>
+
+            <!-- Icono Ubicaciones
+            <a class="flex flex-1 flex-col items-center justify-end gap-1 text-[#974e4e]" href="#">
+                <div class="text-[#974e4e] flex h-8 items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Zm0-112a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.23,144.53,209,128,222Z"></path>
+                    </svg>
+                </div>
+                <p class="text-[#974e4e] text-xs font-medium leading-normal tracking-[0.015em]">Ubicaciones</p>
+            </a> -->
+
+            <!-- Icono Historial -->
+            <a class="flex flex-1 flex-col items-center justify-end gap-1 text-[#1b0e0e]" href="#" onclick="mostrarHistorial()">
+                <div class="text-[#1b0e0e] flex h-8 items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M128,24A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216ZM136,128h36a8,8,0,0,0,0-16H136V72a8,8,0,0,0-16,0v56a8,8,0,0,0,8,8Z"></path>
+                    </svg>
+                </div>
+                <p class="text-[#1b0e0e] text-xs font-medium leading-normal tracking-[0.015em]">Historial</p>
+            </a>
+
+            <!-- Icono Perfil -->
+            <a class="flex flex-1 flex-col items-center justify-end gap-1 text-[#974e4e]" href="#" onclick="mostrarPerfil()">
+                <div class="text-[#974e4e] flex h-8 items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM74.08,197.5a64,64,0,0,1,107.84,0,87.83,87.83,0,0,1-107.84,0ZM96,120a32,32,0,1,1,32,32A32,32,0,0,1,96,120Zm97.76,66.41a79.66,79.66,0,0,0-36.06-28.75,48,48,0,1,0-59.4,0,79.66,79.66,0,0,0-36.06,28.75,88,88,0,1,1,131.52,0Z"></path>
+                    </svg>
+                </div>
+                <p class="text-[#974e4e] text-xs font-medium leading-normal tracking-[0.015em]">Perfil</p>
+            </a>
+        </div>
+        <div class="h-5 bg-[#fcf8f8]"></div>
+    </div>
+
+    <!-- Script para manejar la visualización del perfil del usuario -->
+    <script>
+        let contract;
+        let clavePublica;
+        let contractHistory;
+
+        // Obtener la dirección pública y contrato almacenado después del inicio de sesión
+        document.addEventListener("DOMContentLoaded", async function () {
+            const almacenClavePublica = localStorage.getItem("clavePublica");
+            const direccionContrato = localStorage.getItem("direccionContrato");
+            const direccionContratoHistorial = "0xd6055170a79af696886cd19b69d8dff8bf73db34";
+
+            if (almacenClavePublica && direccionContrato) {
+                clavePublica = almacenClavePublica;
+
+                const contractABI = [
+                    {
+                        "inputs": [
+                            { "internalType": "address", "name": "_clavePublica", "type": "address" }
+                        ],
+                        "name": "buscarUsuario",
+                        "outputs": [
+                            { "internalType": "string", "name": "nombre", "type": "string" },
+                            { "internalType": "string", "name": "apellido", "type": "string" },
+                            { "internalType": "string", "name": "direccion", "type": "string" },
+                            { "internalType": "uint256", "name": "usuarioId", "type": "uint256" },
+                            { "internalType": "string", "name": "tipoUsuario", "type": "string" }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ];
+
+                const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+                const signer = provider.getSigner();
+                contract = new ethers.Contract(direccionContrato, contractABI, signer);
+
+                // Contrato del historial de transfusiones
+                const historyABI = [
+                    {
+                        "inputs": [
+                            { "internalType": "address", "name": "_address", "type": "address" }
+                        ],
+                        "name": "getTransfusionHistoryByAddress",
+                        "outputs": [
+                            {
+                                "components": [
+                                    { "internalType": "uint256", "name": "transactionId", "type": "uint256" },
+                                    { "internalType": "address", "name": "donor", "type": "address" },
+                                    { "internalType": "address", "name": "recipient", "type": "address" },
+                                    { "internalType": "uint256", "name": "amount", "type": "uint256" },
+                                    { "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+                                ],
+                                "internalType": "struct BloodDonationHistory.Transfusion[]",
+                                "name": "",
+                                "type": "tuple[]"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ];
+
+                contractHistory = new ethers.Contract(direccionContratoHistorial, historyABI, signer);
+
+                // Llamar a buscarUsuario para verificar el tipo de usuario y habilitar el botón de donación
+                const usuario = await contract.buscarUsuario(clavePublica);
+                const tipoUsuario = usuario[4];
+
+                if (tipoUsuario && tipoUsuario.toLowerCase() === "donante") {
+                    document.getElementById('donarButton').disabled = false;
+                }
+            }
+        });
+
+        // Función para mostrar el historial de transfusiones
+        async function mostrarHistorial() {
+            try {
+                if (!clavePublica || !contractHistory) {
+                    alert("No se encontraron credenciales del usuario. Inicia sesión primero.");
+                    return;
+                }
+
+                // Llamada al contrato para obtener el historial de transfusiones del usuario
+                const transfusions = await contractHistory.getTransfusionHistoryByAddress(clavePublica);
+
+                // Mostrar el historial de transfusiones en un formato adecuado
+                let historialHtml = "<h2 class='text-[#1b0e0e] text-lg font-bold leading-tight tracking-[-0.015em] mb-4 text-center'>Historial de Transfusiones</h2>";
+                historialHtml += "<div class='flex flex-col gap-4 max-w-[480px] mx-auto'>";
+                transfusions.forEach(transfusion => {
+                  
+                    historialHtml += `<div class='p-4 bg-[#f3e7e9] rounded-xl'>
+                        <p><strong>ID Transacción:</strong> ${transfusion.transactionId}</p>
+                        <p><strong>Donante:</strong> ${transfusion.donor}</p>
+                        <p><strong>Receptor:</strong> ${transfusion.recipient}</p>
+        <p><strong>Cantidad (ml):</strong> ${transfusion.amount}</p>
+                        <p><strong>Fecha:</strong> ${new Date(transfusion.timestamp * 1000).toLocaleString()}</p>
+                    </div>`;
+                });
+                historialHtml += "</div>";
+
+                // Cambiar la visibilidad de las secciones y mostrar el historial
+                document.getElementById('content').innerHTML = historialHtml;
+                document.getElementById('content').classList.remove('hidden');
+                document.getElementById('perfilUsuario').classList.add('hidden');
+            } catch (error) {
+                console.error("Error al intentar obtener el historial de transfusiones:", error);
+                alert("Hubo un problema al obtener el historial de transfusiones.");
+            }
+        }
+
+        // Función para mostrar el perfil del usuario
+        async function mostrarPerfil() {
+            try {
+                if (!clavePublica || !contract) {
+                    alert("No se encontraron credenciales del usuario. Inicia sesión primero.");
+                    return;
+                }
+
+                // Llamada al contrato para obtener la información del usuario
+                const usuario = await contract.buscarUsuario(clavePublica);
+
+                // Mostrar la información en los campos correspondientes
+                document.getElementById('nombre').value = usuario[0];
+                document.getElementById('apellido').value = usuario[1];
+                document.getElementById('direccion').value = usuario[2];
+                document.getElementById('tipoUsuario').value = usuario[4];
+
+                // Cambiar la visibilidad de las secciones
+                document.getElementById('content').classList.add('hidden');
+                document.getElementById('perfilUsuario').classList.remove('hidden');
+            } catch (error) {
+                console.error("Error al intentar obtener el perfil del usuario:", error);
+                alert("Hubo un problema al obtener la información del perfil.");
+            }
+        }
+
+        // Función para mostrar la sección de inicio
+        function mostrarSeccion(seccion) {
+            if (seccion === 'inicio') {
+                location.reload();
+            }
+        }
+
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            // Limpiar los datos almacenados
+            localStorage.removeItem('clavePublica');
+            localStorage.removeItem('direccionContrato');
+
+            // Redirigir al usuario a la página de inicio de sesión
+            window.location.href = "Login.html";
+        }
+
+        // Función para redirigir a la página de transfusión
+        function redirigirATransfusion() {
+            if (!document.getElementById('donarButton').disabled) {
+                window.location.href = "Transfusion.html";
+            } else {
+                alert("Solo los donantes pueden realizar una donación.");
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link rel="stylesheet" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Epilogue%3Awght%40400%3B500%3B700%3B900" />
+    <title>Transfusión de Sangre - Wallet MultiSig</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script> <!-- Incluyendo ethers.js -->
+</head>
+
+<body class="bg-[#f3e7e9] min-h-screen flex flex-col justify-between items-center" style='font-family: Epilogue, "Noto Sans", sans-serif;'>
+    <div class="flex w-full max-w-4xl mx-auto gap-4 p-8">
+        <!-- Sección de Donante -->
+        <div class="bg-white rounded-lg shadow-md w-1/2 p-6">
+            <h2 class="text-lg font-bold text-[#1b0e10] mb-4">Donante</h2>
+            <form id="donorForm" class="space-y-4">
+                <div>
+                    <label for="donorAddress" class="block text-sm font-medium text-[#1b0e10]">Clave Pública del Donante</label>
+                    <input type="text" id="donorAddress" name="donorAddress" placeholder="Clave pública del donante" class="w-full bg-[#f3e7e9] text-[#1b0e10] rounded-lg py-2 px-4 focus:outline-none">
+                </div>
+                <div>
+                    <label for="bloodAmount" class="block text-sm font-medium text-[#1b0e10]">Cantidad de Sangre (ml)</label>
+                    <input type="number" id="bloodAmount" name="bloodAmount" placeholder="Cantidad a donar" class="w-full bg-[#f3e7e9] text-[#1b0e10] rounded-lg py-2 px-4 focus:outline-none">
+                </div>
+                <div>
+                    <label for="privateKeyDonor" class="block text-sm font-medium text-[#1b0e10]">Clave Privada del Donante</label>
+                    <input type="password" id="privateKeyDonor" name="privateKeyDonor" placeholder="Clave privada" class="w-full bg-[#f3e7e9] text-[#1b0e10] rounded-lg py-2 px-4 focus:outline-none">
+                </div>
+                <button type="button" onclick="submitTransaction()" class="w-full bg-[#e61934] text-white text-sm font-bold py-2 px-4 rounded-lg">Enviar Solicitud de Transfusión, Depositar y Aprobar</button>
+            </form>
+        </div>
+
+        <!-- Sección de Paciente -->
+        <div class="bg-white rounded-lg shadow-md w-1/2 p-6">
+            <h2 class="text-lg font-bold text-[#1b0e10] mb-4">Paciente</h2>
+            <form id="patientForm" class="space-y-4">
+                <div>
+                    <label for="patientAddress" class="block text-sm font-medium text-[#1b0e10]">Clave Pública del Paciente</label>
+                    <input type="text" id="patientAddress" name="patientAddress" placeholder="Clave pública del paciente" class="w-full bg-[#f3e7e9] text-[#1b0e10] rounded-lg py-2 px-4 focus:outline-none">
+                </div>
+                <div>
+                    <label for="privateKeyPatient" class="block text-sm font-medium text-[#1b0e10]">Clave Privada del Paciente</label>
+                    <input type="password" id="privateKeyPatient" name="privateKeyPatient" placeholder="Clave privada" class="w-full bg-[#f3e7e9] text-[#1b0e10] rounded-lg py-2 px-4 focus:outline-none">
+                </div>
+                <button type="button" onclick="approveTransaction()" class="w-full bg-[#e61934] text-white text-sm font-bold py-2 px-4 rounded-lg">Aprobar Transfusión</button>
+                <button type="button" onclick="executeTransaction()" class="w-full bg-[#1b0e10] text-white text-sm font-bold py-2 px-4 mt-2 rounded-lg">Ejecutar Transfusión</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script para Manejar la Lógica de la Transfusión -->
+    <script>
+        // Dirección del contrato MultiSig
+        const contractAddress = '0x796e905f0314a753fc046f7faec9210df258ae92';  // Cambia esto con la dirección del contrato desplegado.
+        const contractABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_transactionId",
+				"type": "uint256"
+			}
+		],
+		"name": "approveTransaction",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "deposit",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_transactionId",
+				"type": "uint256"
+			}
+		],
+		"name": "executeTransaction",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "submitTransaction",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "_owners",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_requiredApprovals",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Deposit",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "transactionId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			}
+		],
+		"name": "TransactionApproved",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "transactionId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "TransactionExecuted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "transactionId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "TransactionSubmitted",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "approvals",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_transactionId",
+				"type": "uint256"
+			}
+		],
+		"name": "getTransaction",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "approvalCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "executed",
+				"type": "bool"
+			},
+			{
+				"internalType": "enum BloodDonationMultiSig.TransactionState",
+				"name": "state",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getTransactions",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "approvalCount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "executed",
+						"type": "bool"
+					},
+					{
+						"internalType": "enum BloodDonationMultiSig.TransactionState",
+						"name": "state",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct BloodDonationMultiSig.Transaction[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "isOwner",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "owners",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "requiredApprovals",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "transactions",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "approvalCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "executed",
+				"type": "bool"
+			},
+			{
+				"internalType": "enum BloodDonationMultiSig.TransactionState",
+				"name": "state",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+        // Proveedor y Firmante
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        // Función para enviar una solicitud de transacción, realizar un depósito y aprobar la transacción
+        async function submitTransaction() {
+            try {
+                const donorAddress = document.getElementById('donorAddress').value;
+                const privateKeyDonor = document.getElementById('privateKeyDonor').value;
+                const bloodAmount = document.getElementById('bloodAmount').value;
+
+                if (!donorAddress || !privateKeyDonor || !bloodAmount) {
+                    alert('Por favor, completa todos los campos');
+                    return;
+                }
+
+                // Conectar wallet del donante al contrato
+                const wallet = new ethers.Wallet(privateKeyDonor, provider);
+                const contractWithWallet = new ethers.Contract(contractAddress, contractABI, wallet);
+
+                // Convertir cantidad de sangre a Wei
+                const weiAmount = ethers.utils.parseUnits(bloodAmount, 'wei');
+
+                // Enviar la solicitud de transferencia (Submit Transaction)
+                console.log("Enviando solicitud de transferencia...");
+                const transaction = await contractWithWallet.submitTransaction(donorAddress, weiAmount);
+                const receipt = await transaction.wait();
+                console.log('Solicitud de transfusión enviada.');
+
+                // Obtener el ID de la transacción desde los logs
+                let transactionId;
+                if (receipt.logs.length > 0) {
+                    const iface = new ethers.utils.Interface(contractABI);
+                    for (const log of receipt.logs) {
+                        try {
+                            const parsedLog = iface.parseLog(log);
+                            if (parsedLog.name === 'TransactionSubmitted') {
+                                transactionId = parsedLog.args.transactionId.toNumber();
+                                console.log("ID de la transacción obtenida:", transactionId);
+                                break;
+                            }
+                        } catch (err) {
+                            console.error('No se pudo parsear este log:', err);
+                        }
+                    }
+                }
+
+                if (transactionId === undefined) {
+                    alert('No se pudo obtener el ID de la transacción desde los logs. Depósito y aprobación fallidos.');
+                    return;
+                }
+
+                // Realizar depósito al contrato (Deposit)
+                console.log("Realizando depósito...");
+                const depositTransaction = await contractWithWallet.deposit({ value: weiAmount });
+                await depositTransaction.wait();
+                console.log('Depósito realizado con éxito.');
+
+                // Aprobar la transacción automáticamente (Approve Transaction)
+                console.log("Aprobando transacción...");
+                const approveTransaction = await contractWithWallet.approveTransaction(transactionId);
+                await approveTransaction.wait();
+                console.log('Transacción aprobada automáticamente.');
+
+                alert('Solicitud de transfusión, depósito y aprobación realizados correctamente.');
+
+            } catch (error) {
+                console.error('Error al enviar la transacción:', error);
+                alert('Error al enviar la transacción: ' + error.message);
+            }
+        }
+
+        // Función para aprobar la transacción por el paciente
+        async function approveTransaction() {
+            try {
+                const transactionId = prompt("Introduce el ID de la transacción a aprobar:");
+
+                if (transactionId === null || transactionId === "") {
+                    alert('ID de la transacción no proporcionado');
+                    return;
+                }
+
+                const privateKeyPatient = document.getElementById('privateKeyPatient').value;
+
+                if (!privateKeyPatient) {
+                    alert('Por favor, proporciona la clave privada del paciente');
+                    return;
+                }
+
+                const wallet = new ethers.Wallet(privateKeyPatient, provider);
+                const contractWithWallet = new ethers.Contract(contractAddress, contractABI, wallet);
+
+                const approveTransaction = await contractWithWallet.approveTransaction(transactionId);
+                await approveTransaction.wait();
+
+                alert('Transacción aprobada por el paciente');
+            } catch (error) {
+                console.error('Error al aprobar la transacción:', error);
+                alert('Error al aprobar la transacción: ' + error.message);
+            }
+        }
+// Función para ejecutar la transacción por el paciente
+async function executeTransaction() {
+    try {
+        const transactionId = prompt("Introduce el ID de la transacción a ejecutar:");
+
+        if (transactionId === null || transactionId === "") {
+            alert('ID de la transacción no proporcionado');
+            return;
+        }
+
+        const privateKeyPatient = document.getElementById('privateKeyPatient').value;
+
+        if (!privateKeyPatient) {
+            alert('Por favor, proporciona la clave privada del paciente');
+            return;
+        }
+
+        const wallet = new ethers.Wallet(privateKeyPatient, provider);
+        const contractWithWallet = new ethers.Contract(contractAddress, contractABI, wallet);
+
+        // Ejecutar la transacción
+        console.log("Ejecutando la transacción...");
+        const executeTransaction = await contractWithWallet.executeTransaction(transactionId);
+        await executeTransaction.wait();
+        console.log('Transacción ejecutada');
+
+        // Registrar en el contrato de historial de transfusiones
+        console.log("Registrando en el contrato de historial...");
+        const historyContractAddress = '0xd6055170a79af696886cd19b69d8dff8bf73db34';
+        const historyABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_transactionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_donor",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_recipient",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "recordTransfusion",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "transactionId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "donor",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "TransfusionRecorded",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "getTransfusionHistoryByAddress",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "transactionId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "donor",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "recipient",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct BloodDonationHistory.Transfusion[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "transfusions",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "transactionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "donor",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+        const historyContract = new ethers.Contract(historyContractAddress, historyABI, wallet);
+
+        // Llamar al método recordTransfusion para registrar la transacción
+        const donorAddress = document.getElementById('donorAddress').value;
+        const recipientAddress = document.getElementById('patientAddress').value;
+        const bloodAmount = ethers.utils.parseUnits(document.getElementById('bloodAmount').value, 'wei');
+
+        const recordTransfusion = await historyContract.recordTransfusion(transactionId, donorAddress, recipientAddress, bloodAmount);
+        await recordTransfusion.wait();
+        console.log('Registro de transfusión en historial completado.');
+
+        alert('Transacción ejecutada y registrada en el historial.');
+
+        // Crear y enviar NFT al donante
+        console.log("Creando y enviando NFT al donante...");
+        const nftContractAddress = '0xb6f4d0c766250778f0cff3321cbed635709a04af';  // Cambia esto con la dirección del contrato NFT desplegado.
+        const nftABI = [
+            {
+                "inputs": [
+                    { "internalType": "address", "name": "recipient", "type": "address" },
+                    { "internalType": "string", "name": "tokenURI", "type": "string" }
+                ],
+                "name": "mintNFT",
+                "outputs": [
+                    { "internalType": "uint256", "name": "", "type": "uint256" }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+        const nftContract = new ethers.Contract(nftContractAddress, nftABI, wallet);
+
+        const tokenURI = "https://gateway.pinata.cloud/ipfs/bafkreicnnsxswc6nmiaqpaqijktxbtywivyjm7kp3mbjktcdkoko72og6i";
+        const mintNFTTransaction = await nftContract.mintNFT(donorAddress, tokenURI);
+        await mintNFTTransaction.wait();
+        console.log('NFT creado y enviado al donante.');
+
+        alert('Transacción ejecutada, registrada en el historial y NFT enviado al donante.');
+
+    } catch (error) {
+        console.error('Error al ejecutar la transacción:', error);
+        alert('Error al ejecutar la transacción: ' + error.message);
+    }
+}
+
+
+    </script>
+</body>
+
+</html>
